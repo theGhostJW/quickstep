@@ -1,0 +1,43 @@
+==== Removal and Maintenance of Duplicate Summons and Invalid Summons, Judgments and Bankruptcies (Bankruptcies NZ Only) from CCB [EN-1697] ==== 
+
+	The folowing tests relate to http://jira.dba.corp:8080/browse/EN-1697.
+	
+	It is important that no invalid or duplicate summons, bankruptcies and judgements exist on the CCB database as such records artificially reduce a Patient's credit rating. It is the purpose of this change is to:
+	1) Remove existing records that are duplicates or deemed invalid
+	2) Change the PubRec and Internal services (Au and NZ) such that invalid records will no longer be inserted
+	3) Related logging
+	
+	Note that since the inception of this change AU bankruptcies have been redesigned and have consequntly been descoped from this change.
+
+--- Removal of Duplicate Summons ---
+id: 1
+when: deduplication is run
+then: duplicate summons are removed and this removal is recorded in the history tables
+specIds: FR31[001..009]
+steps:
+	# insert the following duplicate summons records into the summons table (summons_table) using the following sql:
+	
+	/*****************************************************/
+			-- note server is: sql_server
+			-- record 1
+			summons_insert_sql suffix: 1
+			
+			-- record 2
+			summons_insert_sql suffix: 2
+			
+			-- record 3
+			summons_insert_sql suffix: 3
+			
+			-- record 4
+			summons_insert_sql suffix: 4
+			
+	/*****************************************************/
+	
+	# run the following sql on sql_server:
+		verification_sql
+	=> there should be 4 records returned (this confirms the insertion has worked and is ready for test)
+	
+	# invoke_summons_dedupulicator
+	# run the following sql on sql_server:
+		verification_sql
+	=> there will only be a single record returned 

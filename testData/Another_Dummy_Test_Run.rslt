@@ -1,0 +1,52 @@
+==== A Dummy Test Run ====
+
+---- This is Not a Real Test Case ----
+id: 100
+when: something happens
+then: blattt
+specIds: werwwrw
+
+steps:
+  # blahh
+	# blahh
+	!! edddsad
+
+---- This is Not a Real Test Case ----
+id: 200
+when: something happens
+then: blattt
+specIds: werwwrw
+
+steps:
+  # blahh
+	# blahh
+	!! edddsad
+
+---- This is Not a Real Test Case ----
+id: 300
+when: something happens
+then: blattt
+specIds: werwwrw
+
+steps:
+  # blahh
+	# blahh
+	!! edddsad
+
+---- This is Not a Real Test Case ----
+id: 400
+when: something happens
+then: blattt
+specIds: werwwrw
+
+steps:
+  # blahh
+	# blahh
+	!! edddsad
+
+	=> Run process	-  Both Summons Deleted
+	!! demo error
+
+
+*/
+~~

@@ -1,0 +1,4 @@
+import * ..\Cyclic Grandchild.lookup
+
+_hello_world
+	the_greeting the_world

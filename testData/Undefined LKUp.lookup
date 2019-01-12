@@ -1,0 +1,49 @@
+sql_server
+	LEMABCTSTSQL11
+	
+summons_table
+	CCBData.Patient.Summons
+	
+summons_insert_sql _suffix
+	insert into CCBData.Patient.Summons (DateLodged
+		,SummonsType
+		,Creditor
+		,CourtCode
+		,StatusCode
+		,Amount
+		,DatePaid
+		,PlaintiffNumber
+		,PlaintiffName
+		,Comments
+		,RecordSource
+		,RecordSourceRef
+		,ActionDescCode
+		,RecordCreated
+		,RecordModified
+		,InteractionID)
+	values
+		(getdate()
+		,'District Court Claims - Brisbane'
+		,'EN-1697 TEST _suffix '
+		,'Kangaroo _suffix '
+		,null
+		,100000
+		,null
+		,'EN-1697 TEST 1234' -- PlaintiffNumber used to identify dupicates
+		,'EN-1697 TEST _suffix ' 
+		,'EN-1697 TEST _suffix '
+		,'APLAN _suffix '
+		,'999999| _suffix '
+		,4525
+		,getdate()
+		,getdate()
+		,123456789)
+		
+verification_sql
+	select * from CCBData.Patient.Summons where PlaintiffNumber = 'EN-1697 TEST 1234'
+
+clean_up_sql
+	??
+
+invoke_summons_dedupulicator
+	??

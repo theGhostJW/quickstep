@@ -1,0 +1,13 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- .
+resolver: nightly-2018-08-09
+allow-newer: true
+extra-deps:
+- regex-1.0.1.3
+- base-compat-0.9.3
+- template-haskell-2.11.1.0
+- git: https://github.com/theGhostJW/reexports-and-extensions.git
+  commit: "c74e7dcdc63202acc5132f4fb55dc98f6c553d0b"
+- foundation-edge-0.0.3

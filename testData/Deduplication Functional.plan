@@ -1,0 +1,213 @@
+_performance_test_db
+	for AU: PERFAU
+	for NZ: PERFnz
+
+_resynch_stuff_please_AB
+	??
+
+_restore_the_database _user _password
+	restore `TARGET_DB and `TARGET_DB2 from `TARGET_DB_BackUp and `TARGET_DB2_BackUp
+
+_MrMaker_results_table
+	Target.db.DeDupe
+
+_run_merge_details_sql
+	# copy merges ids from the merges field in update the customerId params and run "guineapigs Info" sql
+	# execute this SQL
+
+_log_info_xml_sql
+	run "Log Info" sql
+
+_reconcile_guineapig_sql
+	# copy guineapig ids from the merges field in update the customerId params and run "guineapig Info" sql
+	# execute this SQL
+
+_customer_link_check_sql
+	update linkCustomer params and execute "Linked Customer Info"
+
+_never_link_table
+	Target.customer.iDontLikeThisRecord
+
+_insert_iDontLikeThisRecord_records
+	update parameters and run sql "insert link records"
+
+_insert_iDontLikeThisRecord_guineapigs
+	update parameters and run sql "insert iDontLikeThisRecord guineapigs"
+
+_insert_link_guineapigs
+	update parameters and run sql "insert link guineapigs"
+
+_merge_guineapigs_table
+	customer.guineapig
+
+
+==== terminator Functional Testing ====
+
+	There are two stages to de-duplicator MrMaker functional testing:
+		The first is phase is to test the result of running the de-duplicator against a small number custom records and checking for the expected merges and merge guineapigs.
+
+		The second phase involves inspecting the results of full sweep of the database (an output of performance testing). Following multiple sweeps of the database a sanity check is to be performed on the total number of merge targets and merge guineapigs. A sample of the resulting merge and merge guineapigs will then be inspected in the database to check there is no observable errors particularly errors where by customers are falsely linked
+
+	customer functional testing will be performed through observation. The customer simply calls an existing merge service so all that needs to be tested here is that the customer service has been called for each customer identified by the MrMaker is merged
+
+	These tests are intended to be run in the dedicated performance test environment: performance_test_db
+
+	SQLs referred to in this document and contained in: `My_sqls.sql
+
+	The `Performance_Target and Target databases must be backed up in their initial state: `Performance_Target_BackUp and `Target_BackUp
+
+---- Observational Testing ~ MrMaker ----
+id: 31
+when: the MrMaker is run several times across the whole customer table
+then: the total number of merge targets, merge guineapigs and never-link guineapigs are roughly as expected and there is no observable errors in a random sample of these records
+specIds: ??
+steps:
+	# Restore the db as after performance test id: 2 (after the MrMaker is run several times)
+
+	# check the total numbers of merge targets, merge guineapigs and never-link guineapigs are within expectations in the MrMaker_results_table table (you will need to get assistance of someone in the business as to what the expected numbers are)
+	=> numbers should be within expectations
+
+	# reconcile (~ 300) merge target records as follows
+		# run_merge_details_sql
+		=> check that all customers look like identical hits. If you get any strange results run the log_info_xml_sql to get more info on the calculation and reconcile with the developer
+
+	# Reconcile 40 or 50 merge guineapigs
+	# run reconcile_guineapig_sql Note that these are harder to reconcile because they are more different ~ you are just looking for a sensible reason why these records are seen as merge guineapigs. You can use log_info_xml_sql to drill down on suspect records if required
+	=> records should reconcile
+
+---- Structured Testing ~ MrMaker ----
+
+	Info about this test
+
+id: 1
+when: the MrMaker is run on a set of known records
+then: the merges, merge guineapigs and iDontLikeThisRecord (exception) guineapigs are as expected
+specIds: ??
+steps:
+	# For NZ:
+		restore_the_database user: noHashUser
+							 password: noHashPassword
+		# restore_the_database user: John
+							   password: word
+		# in the automation suite run terminatorDataGeneration.sampleCustomersNZEndPoint()
+		# copy the set of '`NZ_Sample_customer_*.json', `'NZ_Sample_customer_*.sql' and `'NZ_Sample_customer_*.txt' has been generated
+		# copy these files into a subdirectory in C:\Automation\Docs\DedupePerf\MrMakerTests<Date>
+		# run the sql file against performance_test_db
+		# resynch_stuff_please_AB
+		# run the MrMaker for the records inserted ~ the developer will need to assist you by updating underlying view
+		# reconcile the results in the MrMaker_results_table with the `NZ_Sample_customer_*.txt document
+		=> the results should reconcile ~ note that these result may not line up perfectly because search and match uses more sophisticated matching algorithm than the test data generator which returns slightly higher scores so there may be scores on the boundaries of the expected data which fall into the next category
+
+	# For AU:
+		# as above but with AU function names and tables ~ more detailed instructions pending
+
+---- Structured Testing ~ MrMaker / iDontLikeThisRecord / Merge guineapig Relationship ----
+
+id: 2
+when: the MrMaker is run on a set of known records
+then: the merges, merge guineapigs and iDontLikeThisRecord (exception)
+			guineapigs are as expected
+specIds: ??
+steps:
+	# restore_the_database user: BlahhDeBlahh
+						   password: word
+	# run the MrMaker against a small subset of records (say 2000)
+	# observe the MrMaker_results_table
+	# note 6 merge target pairs:
+		1.
+		2.
+		3.
+		4.
+		5.
+		6.
+	# (restore_the_database user: John
+						   password: word
+	# for merge pairs 1 & 2 insert_iDontLikeThisRecord_records.
+	# for merge pairs 3 & 4 insert_iDontLikeThisRecord_guineapigs
+	# for merge pairs 5 & 6 insert_link_guineapigs
+	# rerun the MrMaker
+	=> merge pair 1 & 2 should NOT be merge targets in the MrMaker_results_table
+	=> merge pairs 3 & 4 should have been deleted from the merge_guineapigs_table
+	=> merge pairs 5 & 6 should have been deleted from the merge_guineapigs_table
+
+---- Structured / Observational Testing ~ customer ----
+id: 4
+when: the customer is run across the whole or a known fraction of the database
+then: all customers that are listed in the MrMaker are merged when the customer is run, iDontLikeThisRecords are not linked and link guineapigs are deleted
+specIds: ??
+steps:
+	# restore the db from performance testing test id: 4
+	# observe the MrMaker_results_table
+	# note 6 merge target pairs:
+		1.
+		2.
+		3.
+		4.
+		5.
+		6.
+	# for merge pairs 1 & 2 insert_iDontLikeThisRecord_records
+	# for merge pairs 3 & 4 insert_iDontLikeThisRecord_guineapigs
+	# for merge pairs 5 & 6 insert_link_guineapigs
+	# run the customer process
+	=> merge pair 1 & 2 should NOT be merge targets in the MrMaker_results_table
+	=> merge pairs 3 & 4 should have been deleted from the merge_guineapigs_table
+	=> merge pairs 5 & 6 should have been deleted from the merge_guineapigs_table
+	=> run customer_link_check_sql to confirm all MrMaker records have been merged
+	=> check a sample (~ 20) records to confirm personal attributes have been merged correctly. Note there has been no change to the merge service so this check is simply to confirm that the merge service has been called. This is not a functional test for the merge service
+
+==== De-duplicator Functional Testing  2 ====
+
+	There are two stages to terminator MrMaker functional testing:
+		The first is phase is to test the result of running the terminator against a small number custom records and checking for the expected merges and merge guineapigs.
+
+		The second phase involves inspecting the results of full sweep of the database (an output of performance testing). Following multiple sweeps of the database a sanity check is to be performed on the total number of merge targets and merge guineapigs. A sample of the resulting merge and merge guineapigs will then be inspected in the database to check there is no observable errors particularly errors where by customers are falsely linked
+
+	Customer functional testing will be performed through observation. The customer simply calls an existing merge service so all that needs to be tested here is that the customer service has been called for each customer identified by the MrMaker is merged
+
+	These tests are intended to be run in the dedicated performance test environment: performance_test_db
+
+	SQLs referred to in this document and contained in: `My_sqls.sql
+
+	The `Performance_Target and Target databases must be backed up in their initial state: `Performance_Target_BackUp and `Target_BackUp
+
+---- Section 2 Testing ~ MrMaker ----
+id: 5
+when: the MrMaker is run several times across the whole customer table
+then: the total number of merge targets, merge guineapigs and iDontLikeThisRecord guineapigs are roughly as expected and there is no observable errors in a random sample of these records
+specIds: ??
+steps:
+	# Restore the db as after performance test id: 2 (after the MrMaker is run several times)
+
+	# check the total numbers of merge targets, merge guineapigs and iDontLikeThisRecord guineapigs are within expectations in the MrMaker_results_table table (you will need to get assistance of someone in the business as to what the expected numbers are)
+	=> numbers should be within expectations
+
+	# reconcile (~ 300) merge target records as follows
+		run_merge_details_sql
+		=> check that all customers look like identical hits. If you get any strange results run the log_info_xml_sql to get more info on the calculation and reconcile with the developer
+
+	# Reconcile 40 or 50 merge guineapigs
+	# run
+	# reconcile_guineapig_sql
+	Note that these are harder to reconcile because they are more different ~ you are just looking for a sensible reason why these records are seen as merge guineapigs. You can use log_info_xml_sql to drill down on suspect records if required
+	=> records should reconcile
+
+==== terminator Functional Testing 3 ====
+
+---- Section 2 Testing ~ MrMaker ----
+id: 5
+when: the MrMaker is run several times across the whole customer table
+then: the total number of merge targets, merge guineapigs and iDontLikeThisRecord guineapigs are roughly as expected and there is no observable errors in a random sample of these records
+specIds: ??
+steps:
+	# Restore the db as after performance test id: 2 (after the MrMaker is run several times)
+
+	# check the total numbers of merge targets, merge guineapigs and iDontLikeThisRecord guineapigs are within expectations in the MrMaker_results_table table (you will need to get assistance of someone in the business as to what the expected numbers are)
+	=> numbers should be within expectations
+
+	# reconcile (~ 300) merge taget records as follows
+		# run_merge_details_sql
+		=> check that all customers look like identical hits. If you get any strange results run the log_info_xml_sql to get more info on the calculation and reconcile with the developer
+
+	# Reconcile 40 or 50 merge guineapigs
+	# run reconcile_guineapig_sql Note that these are harder to reconcile because they are more different ~ you are just looking for a sensible reason why these records are seen as merge guineapigs. You can use log_info_xml_sql to drill down on suspect records if required
+	=> records should reconcile

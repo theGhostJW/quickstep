@@ -1,0 +1,446 @@
+==== Dummy Test Run - An Obfuscated Production Test Case ====
+
+	Foo calculations take foo file input data and generate indices that reflect the risk of non / late widgets.
+
+	The purpose of these tests is to:
+		1. verify that the integration between these calculations
+		2. verify FIFOO Enterprise interface and the existing foo file transfer functionality has not regressed
+
+---- Calculate Monthly Refresh ----
+id: 1
+when: Calculate Monthly Refresh
+then: batch calculations are performed on guineapig foo master records
+steps:
+	--- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Identify an active foo patient who lodged a file last month by running the report: Active Foo Patients Who Have Submitted files for last month.
+		If no patient exists in this report find another patient from the <Paticipants><Search>. You will have to force the file in a later step
+	# Ensure that this customer has online foo givebacks set to true (update the patient if required)
+	# Record the patient id:
+	# Change the email of the patient to your moribund email
+	# Transfer Test Cases.txt through FIFOO Enterprise for an active patient for:
+		* current month
+		* file type: TRANS
+
+	# Check the status of the file
+		if
+			status == BadOrder
+		then
+			click on the <status> hyperlink and click <Force> in the popup dialogue
+
+	# Delete any other files that have a status other than: UploadedtoPergatory
+
+	=> The file has been renamed to IT# _YYMMDD__fileType_FileID.xxx and can be seen in T:\Pergatory-Archive ?? - needs update
+
+	# Record the file name for later test steps:
+	# <Menu><FatController><Transfer Files>
+	# Use WinSCP.exe (installed with windows) to log in the sftp share:
+		* Host: 202.22.212.22
+		* Port: 9999
+		* User: Pergatory
+		* Password: OmgWtf
+	=> The target file(s) has / have been transferred to .\Test\Pergatory_INPUT in sftp share
+	# Right click and delete the file (simulating pick up by tpc which monitors this directory and picks up files in production)
+	=> Status of file is TransferedToPergatory in Patient Details screen
+	# Copy C:\Automation\Docs\FooAutomation\TestPlans\supporting files\IT# _# _# _# _Template_tpc_file.txt on your local disk
+		# Rename to the same file name recorded above
+		# Change to content of the first field of the file to match the IT number at the start of the file name
+	# Upload via sftp to .\Test\Pergatory_Response in sftp share simulating returned transaction file
+	# <Menu><FatController><Download Files>
+	=> The file has been deleted from: .\Test\Pergatory_Request
+	=> The file has been copied to: T:\Pergatory-Archive\Response
+	=> Status of file is ReceivedFromPergatory in Patient Details screen
+	# Invoke the loader by selecting # <Menu><FatController><Load Files to Database>
+	=> Screen should display message: "Background task initiated"
+	=> On db: COWDung[UAT/TST]Tossa execute the following sql (note this assumes that the batch ids are running in order - if they are not you may have to modify this query):
+
+			select
+				*
+			from
+				[PergatoryPub].[rawData] child
+				left outer join [PergatoryPub].[foo_master] fooMaster
+			on
+				child.ExecutionNo = fooMaster.ExecutionNo and
+				child.IdxNo = fooMaster.IdxNo
+			where
+				child.ExecutionNo = (
+					select
+						MAX(ExecutionNo)
+					from
+						[PergatoryPub].[rawData]
+				)
+			order by child.ExecutionNo desc
+
+
+		any issues omn db: COWDung[UAT/TST]RDB run the following sql to investigate
+			SELECT TOP 100
+				CAST(YAMLBack as xml) Response,
+				StartTime,
+				Operation,
+				Outcome,
+				*
+			FROM
+				[Logging].[FIFOO EnterpriseTransactions]
+			order by
+				TransactionID desc
+	=> The IT number matches the it number you loaded and number of records returned is the same as the number of lines in the input file and the timestamps correspond to when you loaded the file
+	=> Status of file is UploadedtoPergatory in Patient Details screen
+
+	# Monthly Refresh will run on 1st of every Month on all IDs Present in FooVariableCalculatedData table
+	=> Once Monthly Refresh is completed all IDs Calculations variables should be refreshed based on Foo Variable Calculation excel.
+		then
+	All IDs calculations variables should be refreshed based on Calculations present in the Foo Variable Calculation Excel.
+
+Note: If we have IDs that undergoes foo variables changes for Sep 1st 2017, here first Monthly Process runs and gets saved in
+    FooVariableCalculatedData and accordingly the date will be saved in FooVariableCalculatedData History and new Analytical table.
+
+   Once this Monthly job is completed, daily job will get picked up for further processing and the information is saved in FooVariableCalculatedData
+
+~~
+
+---- Batch Calc on Monthly Refresh ----
+id: 2
+when: Monthly Refresh Frequency
+then: batch calculations are performed on guineapig foo master records
+steps:
+  # The Refresh process should be an Automated Process which will be performed on the 1st of every Month.
+ 	# The Process should be run on or after 8:00 pm on the 1st of each Month.
+ 	=> Update the table < ? > to simulate the date as 1st of month and run the time service.
+	!! demo broken
+ 	--- Invoke Scheduler ---
+
+	# Update the app config
+		# \\COWDungApSrv\Apps\moribund.FIFOO Enterprise\moribund.FIFOO Enterprise.WindowsService.exe.config
+		# Set to a few of minutes after current time
+
+			<setting name="FileActionScheduleStart" serializeAs="String">
+			<value>15:32:00</value>
+			</setting>
+
+		# Restart the <moribund FIFOO Enterprise Service> on this box - ??
+		you can use <Windows Component Services Ap> - you may have to start this twice it seems to fail starting the first time
+
+
+	--- Verify Calculations Have Been Run ---
+	# Monitor for the finish of the run by running the following
+
+		select * from
+			PergatoryPub.FooVariableCalculatorRun
+		order by
+			RunCommencedDate desc
+
+
+---- Monthly and Daily Refresh FIFOO Enterpriseng Batch Calculations ----
+id: 3
+when: Monthly and Daily RefreshFIFOO Enterpriseng
+then: batch calculations are performed on guineapig foo master records
+steps:
+     # Always Monthly refresh should be completed prior to running the Daily refresh process
+ 	# Ex : IDs : 590752429 once Monthly has run check
+ 	=>	 SELECT Top 100   [IDs]
+		,[Id]
+      ,[FooVariableId]
+      ,[FooVariableValue]
+      ,[CreatedDate]
+       FROM [PergatoryPub].[FooVariableCalculatedData]
+       Where IDs in (590752429)
+       AND CreatedDate > = '2016-08-20'  Order by 1 desc
+ 	=> Foo variables for the IDs: 590752429 should show values for last 12 Months.
+
+ 	# Once the Montly run is completed daily should get picked up
+ 	# Ex : IDs : 590752429  check
+ 	=>	 SELECT Top 100   [IDs]
+		,[Id]
+      ,[FooVariableId]
+      ,[FooVariableValue]
+      ,[CreatedDate]
+       FROM [PergatoryPub].[FooVariableCalculatedData]
+       Where IDs in (590752429)
+       AND CreatedDate > = '2016-08-20'  Order by 1 desc
+ 	=> Foo variables for the IDs: 590752429 should should show values for <?>
+
+
+---- Retro Date Refreshed Data - Calcs Should Be based on Reference Date ----
+id: 4
+when: Retro date Refreshed data
+then: batch calculations are performed for Monthly based on Reference date
+     # For Monthly batch the reference date would be previous month last day ( eg: If we are running Montly report on 1st Sep, the reference date would be 31 Aug)
+ 	# For Daily batch the reference date would be the last date when the run started in FooVariableCalculatorRun
+ 	#
+ 		select * from
+			PergatoryPub.FooVariableCalculatorRun
+		order by
+			RunCommencedDate desc
+
+	=> Verify the Foo variable calculations for Monthly and Daily are as expected
+
+---- IDs has no new foo date in the last 12 Months - TSDP Should Be Null ----
+id: 5
+when: IDs has no new foo date in the last 12 Months
+then: TSDP product order by customer will return null values and customer should not be charged.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> If IDs has no new foo data in past 12 months & where all foo data in FooVariableCalculatedData for given IDs is NULL
+	=> New functionality will ensure TSDP returns null value for that segment.
+	=> User should not be charged for Ordering the product if no valid data is available for the ids.
+	=> There should not be any data loss due to this process as all data will be saved in Analytical table & History for 6 Months.
+
+---- Archiving Calc History Table ----
+id: 6
+when: we run Foo Calculations, result data is saved in FooVariableCalculatedData
+then: Archiving historical data will be saved in calc_history_table.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table
+	!! another broke demo
+	=> If we run daily calculations today ie..28th AUG, all the original data will be archived to calc_history_table
+ 	and FooVariableCalculatedData will have the newly calculated data for today 28th AUG.
+	=> Changes can happen on daily basis where new foo data has been provided for a given DUNs.
+	=> Calc_history_table should capture for both  Monthly & Daily refresh data once processed.
+
+---- Archiving Archive Deletion for the Last 6 Months ----
+id: 7
+when: we run Foo Calculations data is saved in FooVariableCalculatedData
+then: create a new process to  archive/deletion process for data older than 6 months in calc_history_table` table.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table`
+	=> New process is created to  archive/deletion process for data older than 6 months in calc_history_table` table.
+	=> Data should be maintained in the database in calc_history_table` table for 6 Months from the date it was inserted.
+	=> For a specific IDs, upload the foo variable data for last 7 Months and history table should hold only 6 Months data.
+
+---- Analytical Snapshot Table Creation ----
+id: 8
+when: we run Foo Calculations data is saved in FooVariableCalculatedData
+then: a New Analytical table is created to maintain Month End Snapshots for all Calculated data.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table`
+	=> New Analytical table is created to maintain Month End Snapshots for all Foo Calculated data.
+~~
+
+---- Snapshot Table Creation ----
+id: 9 skip
+when: we run Foo Calculations data is saved in FooVariableCalculatedData
+then: a Month end Snapshot should be taken for FooVariableCalculatedData
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table`.
+	=> New Analytical table is created to maintain Month End Snapshots for all Foo Calculated data prior to refresh process of running Month End.
+	=> The snapshot should be captured from Monthly refresh that takes place on each Month.
+
+---- Month End Snapshot Table Creation ----
+id: 10 defer
+when: we run Foo Calculations data is saved in FooVariableCalculatedData
+then: a Month end Snapshot should be in column format vs row format.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table`.
+	=> New Analytical table is created to maintain Month End Snapshots for all Foo Calculated data prior to refresh process of running Month End.
+	=> The snapshot should be captured from Monthly refresh that takes place on each Month.
+	=> The analytical data should be available in a column format vs a row format, providing columns for each of the calculation variables.
+	=> Each IDs therefore will have one record per month.
+~~
+---- Month End Snapshot Table Creation ----
+id: 11
+when: we run Foo Calculations data is saved in FooVariableCalculatedData
+then: a Month end Snapshot data should be remain in table (no deletion or archieving in place)
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> When any changes to to the calculated data available in FooVariableCalculatedData, the original calculated data will be archived
+ 	and stored in calc_history_table`.
+	=> New Analytical table is created to maintain Month End Snapshots for all Foo Calculated data prior to refresh process of running Month End.
+	=> The snapshot should be captured from Monthly refresh that takes place on each Month.
+	=> The analytical data should be available in a column format vs a row format, providing columns for each of the calculation variables.
+	=> Each IDs therefore will have one record per month.
+	=> There should be no deletion or archiving from the analytical table. All data should remain in the table.
+
+---- Data Load Triggering ----
+id: 12
+when: we new Foo file is loaded on 1st of every month
+then: all foo files loaded between 8:01 pm on last day of month and 8:00pm on first day of Month will not be loaded.
+	# --- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Same steps as for id:01
+	=> At 8pm on the 1st of the month the monthly refresh process will begin.
+	=> Any foo variables loaded between 8:01pm on the last day of the month and 8:00pm on the first day of the month will not be loaded during the monthly process.
+	=> Monthly process will refresh the calculations which will be stored in FooVariableCalculationData and in new Analytical Table.
+	=> On completion of the monthly refresh the daily process will begin. Any files loaded between 8:01pm on the last day of the month and 8:00pm on the first day of the month will be process.
+~~
+---- Daily Load Triggering ----
+id: 40
+when: a foo file is loaded
+then: batch calculations are performed as expected
+steps:
+	--- Load and Verify a File Via FIFOO Enterprise ---
+	# From http://topSite:81/Patient
+	# Identify an active foo patient who lodged a file last month by running the report: Active Foo Patients Who Have Submitted files for last month.
+		If no patient exists in this report find another patient from the <Paticipants><Search>. You will have to force the file in a later step
+	# Ensure that this customer has online foo givebacks set to true (update the patient if required)
+	# Record the patient id:
+	# Change the email of the patient to your moribund email
+	# Load \auxilaryFiles\Direct Load Copied to Text Not A valid File But OK for Transfer Test Cases.txt through FIFOO Enterprise for an active patient for:
+		* current month
+		* file type: TRANS
+
+	# Check the status of the file
+		if
+			status == BadOrder
+		then
+			click on the <status> hyperlink and click <Force> in the popup dialogue
+
+	# Delete any other files that have a status other than: UploadedtoPergatory
+
+	=> The file has been renamed to IT# _YYMMDD__fileType_FileID.xxx and can be seen in T:\Pergatory-Archive ?? - needs update
+
+	# Record the file name for later test steps:
+	# <Menu><FatController><Transfer Files>
+	# Use WinSCP.exe (installed with windows) to log in the sftp share:
+		* Host: 202.22.212.22
+		* Port: 9999
+		* User: Pergatory
+		* Password: OmgWtf
+	=> The target file(s) has / have been transferred to .\Test\Pergatory_INPUT in sftp share
+	# Right click and delete the file (simulating pick up by tpc which monitors this directory and picks up files in production)
+	=> Status of file is TransferedToPergatory in Patient Details screen
+	# Copy C:\Automation\Docs\FooAutomation\TestPlans\supporting files\IT# _# _# _# _Template_tpc_file.txt on your local disk
+		# Rename to the same file name recorded above
+		# Change to content of the first field of the file to match the IT number at the start of the file name
+	# Upload via sftp to .\Test\Pergatory_Response in sftp share simulating returned transaction file
+	# <Menu><FatController><Download Files>
+	=> The file has been deleted from: .\Test\Pergatory_Request
+	=> The file has been copied to: T:\Pergatory-Archive\Response
+	=> Status of file is ReceivedFromPergatory in Patient Details screen
+	# Invoke the loader by selecting # <Menu><FatController><Load Files to Database>
+	=> Screen should display message: "Background task initiated"
+	=> On db: COWDung[UAT/TST]Tossa execute the following sql (note this assumes that the batch ids are running in order - if they are not you may have to modify this query):
+
+			select
+				*
+			from
+				[PergatoryPub].[rawData] child
+				left outer join [PergatoryPub].[foo_master] fooMaster
+			on
+				child.ExecutionNo = fooMaster.ExecutionNo and
+				child.IdxNo = fooMaster.IdxNo
+			where
+				child.ExecutionNo = (
+					select
+						MAX(ExecutionNo)
+					from
+						[PergatoryPub].[rawData]
+				)
+			order by child.ExecutionNo desc
+
+
+		any issues omn db: COWDung[UAT/TST]RDB run the following sql to investigate
+			SELECT TOP 100
+				CAST(YAMLBack as xml) Response,
+				StartTime,
+				Operation,
+				Outcome,
+				*
+			FROM
+				[Logging].[FIFOO EnterpriseTransactions]
+			order by
+				TransactionID desc
+
+	=> The IT number matches the it number you loaded and number of records returned is the same as the number of lines in the input file and the timestamps correspond to when you loaded the file
+	=> Status of file is UploadedtoPergatory in Patient Details screen
+
+	--- Invoke ForceCalcs ---
+	# Navigate to http://topSite:81/Patient
+	# Invoke <FatController><Calculate Foo Variables>
+
+	--- Verify Calculations Have Been Run ---
+	# Monitor for the finish of the run by running the following
+
+		select * from
+			PergatoryPub.FooVariableCalculatorRun
+		order by
+			RunCommencedDate desc
+
+
+	=> The run has finished - the run starting at around the scheduled start is present and there are no null completion dates
+	# Record the latest (top row) runStart date: %%%%%
+	# Select all the calculations related to the the target ids
+
+	select distinct ids from
+		PergatoryPub.FooVariableCalculatedData
+	where
+		IDs IN (<ALL IDs IN LOADED FILE>)------ WHAT ALL IDs ARE HERE?
+
+	=> All <all IDs in loaded file> IDs are present in the calc table
+	?! possible defect
+	select * from
+		PergatoryPub.FooVariableCalculatedData
+	where
+		IDs in (<all IDs in loaded file>)
+
+
+	=> Created date for all records > runStart date recorded above
+	?! this could be a bug
+
+---- Record Deletion Calc Refresh ----
+id: 50
+when: a foo file is deleted
+then: batch calculations are performed as expected
+steps:
+	# Record the exact time:
+	# Navigate to http://topSite:81/Patient
+	# From the files list delete the file created in the last test case
+		# Click <status> value field
+		# <Delete><OK>
+
+	--- Invoke ForceCalcs ---
+	# Navigate to http://topSite:81/Patient
+	# Invoke <FatController><Calculate Foo Variables>
+
+	--- Verify Calculations Have Been Run ---
+	# Monitor for the finish of the run by running the following
+
+		select * from
+			PergatoryPub.FooVariableCalculatorRun
+		order by
+			RunCommencedDate desc
+
+
+	=> The run has finished - the run starting at around the scheduled start is present and there are no null completion dates
+	# Record the latest (top row) runStart date: %%%%%
+	# Select all the calculations related to the the target ids
+
+	select distinct ids from
+		PergatoryPub.FooVariableCalculatedData
+	where
+		IDs in (<all IDs in deleted file>)
+
+	=> All <all IDs in deleted file> IDs are present in the calc table
+
+	select * from
+		PergatoryPub.FooVariableCalculatedData
+	where
+		IDs in (<all IDs in deleted file>)
+
+	=> Created date for all records > runStart date recorded above
+
+
+Regression Touch Points.
+	* Foo file upload Small FILE
+	* Foo file upload Large file
+	* Try upload with duplicate file in Temp folder.
+	* Try One Patient ID- having sent two Months file at a time.
+	* For a DUN create data only for 1 Month, that ie Month Zero and run Foo calculations, then go to next Month it should not pick up this IDs for next   Month   Report Calculations.
+
+~~

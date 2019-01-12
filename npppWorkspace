@@ -1,0 +1,28 @@
+<NotepadPlus>
+    <Project name="UBuild">
+        <File name="C:\SourceCode\Haskell\UBuildIt Adapted to Megaparsec\src\ParserPlay.hs" />
+    </Project>
+    <Project name="RWH">
+        <Folder name="src">
+            <File name="C:\SourceCode\Haskell\RWH Parsec Adapted to Megaparsec\RWHMegaParsec\src\Parser.hs" />
+        </Folder>
+        <Folder name="tests">
+            <File name="C:\SourceCode\Haskell\RWH Parsec Adapted to Megaparsec\RWHMegaParsec\test\ParserTest.hs" />
+        </Folder>
+    </Project>
+    <Project name="MeggaParsecTute">
+        <File name="C:\SourceCode\Haskell\megaparsecTute1\parseWhile\src\ParseWhile.hs" />
+    </Project>
+    <Project name="AttoParsecPlay">
+        <File name="C:\SourceCode\Haskell\ParserPlay\ParserPlay\src\Main.hs" />
+    </Project>
+    <Project name="Other">
+        <File name="C:\SourceCode\Haskell\stackOverflowExample.hs" />
+    </Project>
+    <Project name="Logs">
+        <File name="dist\test\Parser-0.0.1-test-LamdahofUtils.log" />
+        <File name="dist\test\Parser-0.0.1-test-Parser.log" />
+        <File name="dist\test\Parser-0.0.1.log" />
+        <File name="C:\automationFramework\TestComplete\Basis\Seed\Temp\Parser-0.0.1-test-Parser.copy.log" />
+    </Project>
+</NotepadPlus>
